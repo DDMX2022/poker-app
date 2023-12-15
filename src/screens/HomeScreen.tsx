@@ -35,8 +35,10 @@ const HomeScreen = () => {
             padding={20}>
             <Text style={styles.cardText}>{item?.title}</Text>
           </Card>
+          
         );
       })}
+      {}
     </View>
   );
 };
