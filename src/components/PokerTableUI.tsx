@@ -1,6 +1,5 @@
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 
-import React from 'react';
 import Seat from './Seat';
 
 interface PokerTableUIProps {
@@ -89,10 +88,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#222222',
+    paddingHorizontal: 20,
   },
 
   pokerTable: {
-    width: '90%',
+    width: '100%',
     aspectRatio: 0.5,
     borderRadius: 300,
     borderWidth: 20,
