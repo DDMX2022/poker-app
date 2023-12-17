@@ -10,10 +10,8 @@ const CornerButton = ({position, children, onPress}) => {
 
 const styles = StyleSheet.create({
   cornerButton: {
-    position: 'absolute',
     width: 60,
     aspectRatio: 1,
-    margin: 25,
     backgroundColor: '#0e151c',
     borderWidth: 2,
     borderColor: '#173847',
