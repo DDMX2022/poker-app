@@ -26,7 +26,6 @@ const SwipeModal = ({
   const isHorizontal = direction === 'left' || direction === 'right';
   const windowWidth = Dimensions.get('window').width;
 
-  console?.log('direction', direction);
   const outputRange = isHorizontal
     ? direction === 'right'
       ? [windowWidth, windowWidth * 0.2]
@@ -94,7 +93,6 @@ const SwipeModal = ({
         <TouchableOpacity
           style={styles.backdrop}
           onPress={() => {
-            console?.log('sdasdasdas');
             onClose();
           }}
           activeOpacity={1}

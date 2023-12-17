@@ -7,17 +7,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {CircularArrayList} from '../utilities/helper';
 
-const {width} = Dimensions.get('window');
-
-const CircularTabScreen = ({isCyclic = true}) => {
+const {width, height} = Dimensions.get('window');
+const ITEM_HEIGHT = height * 0.8;
+const CircularTabScreen = ({isCyclic = true, animatedSwitch = false}) => {
   const [dataList, setDataList] = useState(new CircularArrayList(10));
   const [data, setData] = useState([]);
   const flatListRef = useRef(null);
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [isRemovingItem, setIsRemovingItem] = useState(false);
+
   useEffect(() => {
     updateFlatListData();
   }, []);
@@ -35,35 +37,61 @@ const CircularTabScreen = ({isCyclic = true}) => {
       setData(dataArray);
     }
   };
-
-  const removeCurrentItem = (item, index) => {
-    let actualIndex = (index - 1 + dataList.count) % dataList.count;
-
-    dataList.removeAt(actualIndex);
-    updateFlatListData();
-
-    if (dataList.count === 0) {
-      dataList.reset();
-      setData([]);
+  useEffect(() => {
+    if (selectedTabIndex >= 0 && selectedTabIndex < dataList.count) {
+      const adjustedIndex =
+        isCyclic && data.length > 1 ? selectedTabIndex + 1 : selectedTabIndex;
+      flatListRef.current?.scrollToIndex({
+        index: adjustedIndex,
+        animated: animatedSwitch,
+      });
     }
-  };
+  }, [selectedTabIndex, dataList, animatedSwitch, isCyclic, data.length]);
+  useEffect(() => {
+    if (!isRemovingItem && dataList.count === 0) {
+      setIsRemovingItem(false);
+    }
+  }, [dataList.count, isRemovingItem]);
+  const removeCurrentItem = useCallback(
+    (item, index) => {
+      setIsRemovingItem(true);
+      let actualIndex = (index - 1 + dataList.count) % dataList.count;
 
-  const addNewItem = () => {
+      dataList.removeAt(actualIndex);
+      updateFlatListData();
+
+      if (dataList.count === 0) {
+        dataList.reset();
+        setData([]);
+      }
+      setIsRemovingItem(false);
+    },
+    [dataList, updateFlatListData],
+  );
+
+  const addNewItem = useCallback(() => {
     const newItem = `Item ${dataList.count + 1}`;
     dataList.add(newItem);
-    console?.log(dataList);
     updateFlatListData();
-  };
+
+    const newTabIndex = dataList.count - 1;
+    setSelectedTabIndex(newTabIndex);
+  }, [dataList]);
+
   const onMomentumScrollEnd = event => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    const offset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offset / width);
     if (isCyclic) {
       if (index === 0) {
-        flatListRef.current.scrollToIndex({
-          index: data.length - 2,
-          animated: false,
+        flatListRef.current.scrollToOffset({
+          offset: width * (data.length - 2),
+          animated: animatedSwitch,
         });
       } else if (index === data.length - 1) {
-        flatListRef.current.scrollToIndex({index: 1, animated: false});
+        flatListRef.current.scrollToOffset({
+          offset: width,
+          animated: animatedSwitch,
+        });
       }
       const newIndex =
         index === 0
@@ -77,7 +105,7 @@ const CircularTabScreen = ({isCyclic = true}) => {
     }
   };
 
-  const TabHeader = ({titles, onSelect, selectedTabIndex}) => {
+  const TabHeader = React.memo(({titles, onSelect, selectedTabIndex}) => {
     return (
       <View style={styles.tabHeaderContainer}>
         {titles.map((title, index) => (
@@ -93,13 +121,24 @@ const CircularTabScreen = ({isCyclic = true}) => {
         ))}
       </View>
     );
-  };
+  });
 
-  const handleSelectTab = index => {
-    setSelectedTabIndex(index);
-    const adjustedIndex = isCyclic && data.length > 1 ? index + 1 : index;
-    flatListRef.current.scrollToIndex({index: adjustedIndex, animated: true});
-  };
+  const getItemLayout = (data, index) => ({
+    length: ITEM_HEIGHT,
+    offset: width * index,
+    index,
+  });
+  const handleSelectTab = useCallback(
+    index => {
+      setSelectedTabIndex(index);
+      const adjustedIndex = isCyclic && data.length > 1 ? index + 1 : index;
+      flatListRef.current.scrollToIndex({
+        index: adjustedIndex,
+        animated: animatedSwitch,
+      });
+    },
+    [dataList, animatedSwitch],
+  );
 
   const renderItem = ({item, index}) => (
     <View style={styles.itemContainer}>
@@ -112,9 +151,12 @@ const CircularTabScreen = ({isCyclic = true}) => {
   );
   return (
     <View style={styles.fullScreen}>
-      <View style={styles.buttonContainer}>
-        <Button title="Add New Item" onPress={addNewItem} />
-      </View>
+      <TouchableOpacity
+        style={styles.buttonContainer}
+        onPress={addNewItem}
+        disabled={isRemovingItem}>
+        <Text style={styles.buttonText}>ADD NEW ITEM</Text>
+      </TouchableOpacity>
       <TabHeader
         titles={dataList.toArray().map(item => item)}
         onSelect={handleSelectTab}
@@ -130,6 +172,7 @@ const CircularTabScreen = ({isCyclic = true}) => {
         showsHorizontalScrollIndicator={false}
         scrollEnabled={dataList.count > 1}
         onMomentumScrollEnd={onMomentumScrollEnd}
+        getItemLayout={getItemLayout}
       />
     </View>
   );
@@ -154,6 +197,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 10,
+    padding: 10,
+    backgroundColor: 'green',
+  },
+  buttonText: {
+    fontSize: 20,
+    color: 'white',
   },
   tabHeaderContainer: {
     flexDirection: 'row',

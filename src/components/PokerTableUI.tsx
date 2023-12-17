@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
   },
   seat: {
     position: 'absolute',
-    width: 40, // Example seat size
-    height: 40, // Example seat size
-    backgroundColor: '#FFF', // Example seat color
-    borderRadius: 20, // Make the seats round
+    width: 40,
+    height: 40,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#000',
     justifyContent: 'center',
